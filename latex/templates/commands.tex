@@ -1,0 +1,114 @@
+% =====================================================================
+%  config/commands.tex
+%  ---------------------------------------------------------------
+%  Macros shared by every project. Generated documents (a single
+%  project report or the merged book) set the per-project values with
+%  \setproject, so the same macros can be reused project after project.
+% =====================================================================
+
+% ---------- Section & subsection numbering ---------------------------
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\arabic{section}.\arabic{subsection}.\arabic{subsubsection}}
+
+% ---------- Identity ---------------------------------------------------
+\newcommand{\headertext}{KOREA SOFTWARE HRD CENTER}
+\newcommand{\institution}{Korea Software HRD Center}
+\newcommand{\projnameplain}{}
+\newcommand{\projname}{\textbf{\projnameplain}}
+\newcommand{\currentproject}{}
+
+% \setproject{project name}{footer text}
+\newcommand{\setproject}[2]{%
+  \renewcommand{\projnameplain}{#1}%
+  \renewcommand{\currentproject}{#2}%
+}
+
+% ---------- One counter per project -----------------------------------
+% In the merged book every project restarts its section, figure, table
+% and listing numbers. hyperref needs unique anchor names, so the
+% "H" versions of those counters include the project number.
+\newcounter{project}
+\renewcommand{\theHsection}{p\arabic{project}.\arabic{section}}
+\renewcommand{\theHfigure}{p\arabic{project}.\arabic{figure}}
+\renewcommand{\theHtable}{p\arabic{project}.\arabic{table}}
+\AtBeginDocument{%
+  \renewcommand{\theHlstlisting}{p\arabic{project}.\arabic{lstlisting}}%
+}
+
+% \projectpart{project name}{footer text}: starts a project in the book.
+\newcommand{\projectpart}[2]{%
+  \cleardoublepage
+  \stepcounter{project}%
+  \setcounter{section}{0}%
+  \setcounter{figure}{0}%
+  \setcounter{table}{0}%
+  \setcounter{lstlisting}{0}%
+  \setproject{#1}{#2}%
+  \phantomsection
+  \addcontentsline{toc}{part}{#1}%
+}
+
+% ---------- Table of contents: project entries (book only) -------------
+\renewcommand{\cftpartfont}{\rmfamily\large\bfseries\color{CoverNavy}}
+\renewcommand{\cftpartpagefont}{\rmfamily\large\bfseries\color{CoverNavy}}
+\setlength{\cftbeforepartskip}{1.2em}
+\cftsetindents{part}{0em}{0em}
+
+% ---------- Unnumbered front section title ----------------------------
+% Contributors, acknowledgement, executive summary, preface ...
+\newcommand{\frontsection}[1]{%
+  \phantomsection
+  \addcontentsline{toc}{section}{#1}%
+  {\raggedright \noindent \textbf{\Large #1}\par}
+  \vspace{0.3cm}
+}
+
+% ---------- References heading ------------------------------------------
+% The references section prints its own numbered \section heading, so
+% thebibliography must not add a second one.
+\patchcmd{\thebibliography}{\section*{\refname}}{}{}{}
+
+% ---------- Small typographic helpers --------------------------------
+\newcommand{\code}[1]{\texttt{\small #1}}     % inline code / identifiers
+\newcommand{\file}[1]{\texttt{\small #1}}     % file names
+
+\makeatletter
+\g@addto@macro\UrlBreaks{\do\/\do\-\do\_}
+\makeatother
+\newcommand{\ep}[1]{{\small\path{#1}}}        % API endpoints
+
+% ---------- Consistent figure inclusion --------------------------------
+% #1 width fraction  #2 file  #3 caption  #4 label
+% Non-floating: the image sits exactly where it is written.
+\newcommand{\projfigure}[4]{%
+  \par\vspace{2pt}%
+  \begin{center}
+    \includegraphics[width=#1\linewidth,height=0.8\textheight,keepaspectratio]{#2}\par
+    \vspace{6pt}
+    \captionof{figure}{#3}\label{#4}
+  \end{center}
+  \vspace{2pt}%
+}
+
+% ---------- Keep a heading with its table or diagram ------------------
+\newcommand{\holdspace}[1]{\needspace{#1\textheight}}
+
+% ---------- Team profile page card --------------------------------------
+% #1 photo  #2 name  #3 role
+\newcommand{\profilemember}[3]{%
+  \begin{minipage}[t]{3.0cm}
+    \centering
+    \includegraphics[width=2.7cm,height=3.3cm,keepaspectratio]{#1}\\[5pt]
+    {\small\bfseries #2}\\
+    {\footnotesize\bfseries\color{ProfileBlue} #3}
+  \end{minipage}%
+}
+\newcommand{\profilenophoto}[2]{%
+  \begin{minipage}[t]{3.0cm}
+    \centering
+    \fcolorbox{RuleGray}{RowGray}{\rule{0pt}{3.1cm}\rule{2.5cm}{0pt}}\\[5pt]
+    {\small\bfseries #1}\\
+    {\footnotesize\bfseries\color{ProfileBlue} #2}
+  \end{minipage}%
+}

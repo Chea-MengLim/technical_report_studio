@@ -1,0 +1,184 @@
+% =====================================================================
+% config/style.tex
+% =====================================================================
+
+% =====================================================================
+% 1. GLOBAL FONT & TYPOGRAPHY
+% =====================================================================
+\renewcommand{\familydefault}{\rmdefault}
+
+
+% =====================================================================
+% 2. TABLE OF CONTENTS (TOC) FORMATTING & SPACING
+% =====================================================================
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+
+\renewcommand{\cfttoctitlefont}{\rmfamily\Large\bfseries}
+
+% Enable dotted leader lines for main sections
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+% Set indentations and wide number box dimensions
+\cftsetindents{section}{0em}{2.5em}
+\cftsetindents{subsection}{2.0em}{2.5em}
+\cftsetindents{subsubsection}{4.0em}{4.5em}
+
+% Vertical spacing between items
+\setlength{\cftbeforesecskip}{0.5em}
+\setlength{\cftbeforesubsecskip}{0.3em}
+\setlength{\cftbeforesubsubsecskip}{0.3em}
+
+% Reset box overrides to prevent overlapping
+\renewcommand{\cftsecpresnum}{}
+\renewcommand{\cftsecaftersnum}{}
+\renewcommand{\cftsubsecpresnum}{}
+\renewcommand{\cftsubsecaftersnum}{}
+
+% Font styling
+\renewcommand{\cftsecfont}{\rmfamily\bfseries}
+\renewcommand{\cftsecpagefont}{\rmfamily\bfseries}
+\renewcommand{\cftsubsecfont}{\rmfamily}
+\renewcommand{\cftsubsecpagefont}{\rmfamily}
+\renewcommand{\cftsubsubsecfont}{\rmfamily}
+\renewcommand{\cftsubsubsecpagefont}{\rmfamily}
+
+% =====================================================================
+% 3. RUNNING HEADERS AND FOOTERS
+% =====================================================================
+
+\setlength{\headheight}{14pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+
+% Header (\headertext and \currentproject are set in commands.tex;
+% \currentproject changes at the start of each project in the book)
+\fancyhead[L]{\rmfamily\footnotesize\scshape \headertext}
+\fancyhead[R]{}
+
+% Footer
+\fancyfoot[L]{\rmfamily\footnotesize \currentproject}
+\fancyfoot[R]{\rmfamily\footnotesize Page\,|\,\thepage}
+
+% Header and footer rules
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Plain page style (used on section/chapter starts)
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyhead[L]{\rmfamily\footnotesize\scshape \headertext}
+  \fancyhead[R]{}
+  \fancyfoot[L]{\rmfamily\footnotesize \currentproject}
+  \fancyfoot[R]{\rmfamily\footnotesize Page\,|\,\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+  \renewcommand{\footrulewidth}{0.4pt}
+}
+
+
+% =====================================================================
+% 4. BODY TEXT
+% =====================================================================
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 1pt minus 1pt}
+\linespread{1.05}
+\raggedbottom
+\justifying
+\sloppy
+\emergencystretch=2em
+
+
+% =====================================================================
+% 5. COLOUR DEFINITIONS
+% =====================================================================
+
+\definecolor{HeaderGray}{RGB}{89,89,89}
+\definecolor{RowGray}{RGB}{242,242,242}
+\definecolor{RuleGray}{RGB}{128,128,128}
+\definecolor{CodeBg}{RGB}{248,248,248}
+\definecolor{CodeFrame}{RGB}{170,170,170}
+\definecolor{CodeKeyword}{RGB}{0,0,153}
+\definecolor{CodeComment}{RGB}{95,140,95}
+\definecolor{CodeString}{RGB}{163,21,21}
+\definecolor{ProfileBlue}{RGB}{31,58,110}
+\definecolor{CoverNavy}{RGB}{18,78,111}
+\definecolor{CoverBlue}{RGB}{20,82,119}
+\definecolor{CoverGray}{RGB}{75,75,75}
+\definecolor{CoverAccent}{HTML}{5EA0F5}
+
+
+% =====================================================================
+% 6. TABLE STYLING
+% =====================================================================
+
+\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{6pt}
+\arrayrulecolor{RuleGray}
+
+% p{} aligns cell content to the top; m{} (array pkg) centers it
+% vertically instead, so a short one-line cell (e.g. "Python") lines up
+% with the middle of a taller multi-line cell beside it, not its top.
+\renewcommand\tabularxcolumn[1]{m{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}m{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}m{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{Z}{>{\centering\arraybackslash}X}
+
+
+% =====================================================================
+% 7. FIGURE & TABLE FLOAT DEFAULTS
+% =====================================================================
+
+% Images use explicit per-project paths (projects/<slug>/...), so two
+% projects can both contain a file called "system-architecture.png".
+
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.65}
+\renewcommand{\textfraction}{0.10}
+\renewcommand{\floatpagefraction}{0.70}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+
+
+% =====================================================================
+% 8. SECTION HEADING FORMATTING
+% =====================================================================
+
+\titleformat{\section}
+  {\rmfamily\Large\bfseries}
+  {\thesection}
+  {1em}
+  {}
+
+\titleformat{\subsection}
+  {\rmfamily\large\bfseries}
+  {\thesubsection}
+  {1em}
+  {}
+
+\titleformat{\subsubsection}
+  {\rmfamily\normalsize\bfseries}
+  {\thesubsubsection}
+  {1em}
+  {}
+
+% Tighter gaps around headings: space-before, space-after-heading,
+% space-before-following-paragraph (last argument is unused here since
+% titles are not run-in).
+\titlespacing*{\section}{0pt}{12pt plus 2pt minus 2pt}{4pt}
+\titlespacing*{\subsection}{0pt}{10pt plus 2pt minus 2pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{8pt plus 1pt minus 1pt}{2pt}
+
+% =====================================================================
+% 9. FLOAT SPACING
+% =====================================================================
+% Tighter gap between body text and an in-text ([H]) figure than the
+% article-class default, which otherwise stacks with \parskip and reads
+% as an oversized gap before every diagram/screenshot.
+\setlength{\intextsep}{4pt plus 1pt minus 1pt}
+\setlength{\textfloatsep}{6pt plus 1pt minus 1pt}
+\setlength{\floatsep}{4pt plus 1pt minus 1pt}

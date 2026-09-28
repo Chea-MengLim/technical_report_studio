@@ -1,0 +1,81 @@
+% =====================================================================
+% config/packages.tex
+% ---------------------------------------------------------------
+% Every \usepackage for the document lives here and nowhere else.
+% All packages below ship with Overleaf's standard TeX Live
+% distribution -- nothing needs to be installed manually.
+% =====================================================================
+
+% ---------- Encoding and language -----------------------------------
+\usepackage[T1]{fontenc}          % 8-bit output encoding (proper hyphenation)
+\usepackage[english]{babel}       % English hyphenation patterns
+\usepackage{textcomp}             % Extra text symbols
+
+% ---------- Fonts (Modern Times New Roman Setup) --------------------
+% Fully enables Times New Roman across regular text, math, headings, and TOC.
+\usepackage{newtxtext,newtxmath}
+
+% ---------- Monospace font for code listings -------------------------
+% Consolas itself is a proprietary Microsoft font unavailable under
+% pdflatex/TeX Live, so Inconsolata is used as a free, metrically
+% similar substitute for \ttfamily in code listings.
+\usepackage{inconsolata}
+
+% ---------- Programming helpers (\patchcmd for the bibliography) -------
+\usepackage{etoolbox}
+
+% ---------- Diagrams / decorative page elements -----------------------
+\usepackage{tikz}
+
+% ---------- Page geometry, headers, spacing --------------------------
+% Configured for two-sided (alternating) printing margins
+\usepackage[
+  a4paper,
+  inner=30mm,    % Extra space on the binding side (left on odd pages, right on even pages)
+  outer=20mm,    % Outer margin
+  top=25mm,
+  bottom=25mm,
+  headheight=14pt
+]{geometry}
+\usepackage{fancyhdr}
+\usepackage{emptypage}            % Blank pages from \cleardoublepage stay blank
+\usepackage{titlesec}             % Custom section heading format
+\usepackage{setspace}
+\usepackage{needspace}            % Keep a heading with the block that follows
+\usepackage{ragged2e}
+\usepackage{microtype}            % Subtle kerning/protrusion improvements
+
+% ---------- Colour ---------------------------------------------------
+\usepackage[table,dvipsnames]{xcolor}
+
+% ---------- Tables ---------------------------------------------------
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% ---------- Figures and floats ---------------------------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{adjustbox}
+\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+\captionsetup[table]{justification=raggedright,singlelinecheck=false}
+\captionsetup[figure]{justification=centering,width=0.80\linewidth}
+\usepackage{subcaption}
+\usepackage{capt-of}              % \captionof for non-floating figures (exact spacing control)
+\usepackage{pdflscape}            % Landscape pages for wide tables
+
+% ---------- Lists ----------------------------------------------------
+\usepackage{enumitem}
+
+% ---------- Code listings --------------------------------------------
+\usepackage{listings}
+
+% ---------- Table of contents customisation --------------------------
+\usepackage{tocloft}
+
+% ---------- Cross-references and links (load hyperref LAST) ----------
+\usepackage{url}
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
+\usepackage[nameinlink]{cleveref}

@@ -1,0 +1,19 @@
+# Postgres and RustFS (S3) are external: set DATABASE_URL and S3_* in .env.
+# Development:  npm run dev                     (on the host, no docker needed)
+# Production:   docker compose --profile app up -d --build
+services:
+  app:
+    profiles: ["app"]
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      S3_ENDPOINT: ${S3_ENDPOINT:?set S3_ENDPOINT in .env}
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-${S3_ENDPOINT}}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY in .env}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?set S3_SECRET_KEY in .env}
+      S3_BUCKET: ${S3_BUCKET:-book-assets}
+      LATEX_RUNNER: local
+    ports:
+      - "3000:3000"

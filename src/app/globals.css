@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply border-blue-700 bg-blue-700 text-white hover:bg-blue-800;
+  }
+  .btn-danger {
+    @apply border-red-300 text-red-700 hover:bg-red-50;
+  }
+  .input {
+    @apply h-8 rounded-md border border-slate-300 bg-white px-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100;
+  }
+  textarea.input {
+    @apply h-auto py-1.5;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-slate-700;
+  }
+  .hint {
+    @apply mt-1 text-xs text-slate-500;
+  }
+  .card {
+    @apply rounded-lg border border-slate-200 bg-white shadow-sm;
+  }
+  .icon-btn {
+    @apply inline-flex h-6 w-6 items-center justify-center rounded hover:bg-slate-200;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .block-card {
+    @apply overflow-hidden rounded-md border border-slate-300 bg-white font-sans text-left;
+  }
+  .chip {
+    @apply mx-0.5 inline-block rounded px-1 align-baseline font-sans text-[0.85em];
+  }
+  .chip-name {
+    @apply bg-blue-50 font-bold text-blue-900;
+  }
+  .chip-ref {
+    @apply bg-emerald-50 text-emerald-800;
+  }
+  .chip-missing {
+    @apply bg-red-50 text-red-700 line-through;
+  }
+  .toast {
+    @apply fixed right-4 bottom-4 z-50 rounded-md px-4 py-2 text-sm shadow-lg;
+  }
+  .toast-error {
+    @apply bg-red-700 text-white;
+  }
+}
+
+/* ---- The editing surface looks like the printed report ---------------- */
+.report-content {
+  font-family: "Times New Roman", "TeX Gyre Termes", Times, serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #111;
+  outline: none;
+  min-height: 300px;
+  text-align: justify;
+}
+.report-content p {
+  margin: 0 0 0.6em;
+}
+.report-content h2 {
+  font-size: 1.3em;
+  font-weight: 700;
+  margin: 1.2em 0 0.4em;
+}
+.report-content h3 {
+  font-size: 1.08em;
+  font-weight: 700;
+  margin: 1em 0 0.3em;
+}
+.report-content h2[data-numbered="false"]::after,
+.report-content h3[data-numbered="false"]::after {
+  content: "unnumbered";
+  margin-left: 0.6em;
+  font: 500 11px var(--font-geist-sans), sans-serif;
+  color: #94a3b8;
+  vertical-align: middle;
+}
+.report-content ul {
+  list-style: disc;
+  padding-left: 1.6em;
+  margin: 0 0 0.6em;
+}
+.report-content ol {
+  list-style: decimal;
+  padding-left: 1.6em;
+  margin: 0 0 0.6em;
+}
+.report-content li p {
+  margin: 0.15em 0;
+}
+.report-content a {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+.report-content code {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.85em;
+  background: #f1f5f9;
+  padding: 0 0.2em;
+  border-radius: 3px;
+}
+.report-content pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+.report-content .page-break {
+  margin: 1.5em 0;
+  border-top: 2px dashed #cbd5e1;
+  text-align: center;
+  font: 500 11px var(--font-geist-sans), sans-serif;
+  color: #94a3b8;
+  line-height: 0;
+  user-select: none;
+}
+.report-content .page-break.ProseMirror-selectednode {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+.report-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Tables: grey header, zebra rows, like the template */
+.report-content .tableWrapper {
+  margin: 1em 0;
+  overflow-x: auto;
+}
+.report-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  table-layout: fixed;
+}
+.report-content th,
+.report-content td {
+  border: 1px solid #d4d4d4;
+  padding: 4px 6px;
+  vertical-align: middle;
+  text-align: left;
+  position: relative;
+}
+.report-content th {
+  background: rgb(89, 89, 89);
+  color: white;
+  font-weight: 700;
+}
+.report-content tr:nth-child(odd):not(:first-child) td {
+  background: rgb(242, 242, 242);
+}
+.report-content td p,
+.report-content th p {
+  margin: 0;
+}
+.report-content .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(59, 130, 246, 0.15);
+  pointer-events: none;
+}
+.report-content figure {
+  margin: 0;
+}

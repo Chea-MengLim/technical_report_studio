@@ -1,0 +1,124 @@
+% =====================================================================
+%  config/listings.tex
+%  ---------------------------------------------------------------
+%  Syntax-highlighting styles for source code (Python) and for API
+%  payloads (JSON). Uses the `listings` package, which needs no
+%  shell-escape and is available on every Overleaf project.
+% =====================================================================
+
+% ---------- A JSON "language" definition for listings ----------------
+\lstdefinelanguage{json}{
+  morestring=[b]",
+  morestring=[b]',
+  literate=
+    *{0}{{{\color{CodeString}0}}}{1}
+     {1}{{{\color{CodeString}1}}}{1}
+     {2}{{{\color{CodeString}2}}}{1}
+     {3}{{{\color{CodeString}3}}}{1}
+     {4}{{{\color{CodeString}4}}}{1}
+     {5}{{{\color{CodeString}5}}}{1}
+     {6}{{{\color{CodeString}6}}}{1}
+     {7}{{{\color{CodeString}7}}}{1}
+     {8}{{{\color{CodeString}8}}}{1}
+     {9}{{{\color{CodeString}9}}}{1}
+     {:}{{{\color{CodeKeyword}{:}}}}{1}
+     {,}{{{\color{CodeKeyword}{,}}}}{1}
+     {\{}{{{\color{CodeKeyword}{\{}}}}{1}
+     {\}}{{{\color{CodeKeyword}{\}}}}}{1}
+     {[}{{{\color{CodeKeyword}{[}}}}{1}
+     {]}{{{\color{CodeKeyword}{]}}}}{1},
+}
+
+% ---------- Base style shared by all listings ------------------------
+\lstdefinestyle{base}{
+  backgroundcolor  = \color{CodeBg},
+  frame            = single,
+  rulecolor        = \color{CodeFrame},
+  framerule        = 0.5pt,
+  basicstyle       = \ttfamily\scriptsize,
+  breaklines       = true,
+  breakatwhitespace= false,
+  postbreak        = \mbox{\textcolor{CodeFrame}{$\hookrightarrow$}\space},
+  columns          = fullflexible,
+  keepspaces       = true,
+  showstringspaces = false,
+  showspaces       = false,
+  showtabs         = false,
+  tabsize          = 4,
+  captionpos       = b,
+  aboveskip        = 8pt,
+  belowskip        = 8pt,
+  % Frame margins are deliberately symmetric: xleftmargin must equal
+  % framexleftmargin (and likewise on the right) so the frame ends up
+  % exactly \linewidth wide instead of poking into the right margin.
+  xleftmargin      = 5pt,
+  xrightmargin     = 5pt,
+  framexleftmargin = 5pt,
+  framexrightmargin= 5pt,
+  framesep         = 3pt,
+  extendedchars    = false,
+  % NOTE: `upquote` is deliberately left OFF. With Times/Courier it pulls
+  % straight quotes from the TS1 Computer Modern fonts, which forces
+  % METAFONT to build Type 3 bitmap fonts -- slow to compile and blurry
+  % in the PDF. Quotes render correctly from the T1 Courier font instead.
+}
+
+% ---------- Python -----------------------------------------------------
+\lstdefinestyle{python}{
+  style        = base,
+  language     = Python,
+  keywordstyle = \color{CodeKeyword}\bfseries,
+  commentstyle = \color{CodeComment}\itshape,
+  stringstyle  = \color{CodeString},
+  numbers      = none,
+  morekeywords = {self,None,True,False,async,await},
+}
+
+% ---------- JSON (API request/response payloads) ---------------------
+\lstdefinestyle{json}{
+  style       = base,
+  language    = json,
+  stringstyle = \color{CodeString},
+  numbers     = none,
+}
+
+% ---------- Short inline snippets ------------------------------------
+\lstdefinestyle{snippet}{
+  style      = base,
+  language   = Python,
+  numbers    = none,
+  basicstyle = \ttfamily\small,
+  keywordstyle = \color{CodeKeyword}\bfseries,
+  commentstyle = \color{CodeComment}\itshape,
+}
+
+% ---------- Other languages (SQL, Java, shell, HTML ...) ------------
+% Used with an explicit language: [style=highlight, language=SQL]
+\lstdefinestyle{highlight}{
+  style        = base,
+  keywordstyle = \color{CodeKeyword}\bfseries,
+  commentstyle = \color{CodeComment}\itshape,
+  stringstyle  = \color{CodeString},
+  numbers      = none,
+}
+
+% JavaScript / TypeScript is not built into listings
+\lstdefinelanguage{JavaScript}{
+  morekeywords = {async,await,break,case,catch,class,const,continue,
+    default,delete,do,else,export,extends,false,finally,for,from,function,
+    if,import,in,instanceof,interface,let,new,null,of,return,super,switch,
+    this,throw,true,try,type,typeof,undefined,var,void,while,yield},
+  sensitive    = true,
+  morecomment  = [l]{//},
+  morecomment  = [s]{/*}{*/},
+  morestring   = [b]',
+  morestring   = [b]",
+}
+
+% Default style if none is given
+\lstset{style=base}
+
+% Rename the listings float so "Listing 1" reads well next to
+% "Figure 1" and "Table 1"
+\renewcommand{\lstlistingname}{Listing}
+\renewcommand{\lstlistlistingname}{List of Listings}
