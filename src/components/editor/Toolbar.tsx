@@ -53,7 +53,7 @@ function Btn({
 
 const Sep = () => <span className="mx-1 h-6 w-px bg-slate-200" />;
 
-export function Toolbar({ editor }: { editor: Editor }) {
+export function Toolbar({ editor, headings = true }: { editor: Editor; headings?: boolean }) {
   const env = useEditorEnv();
   const fileInput = useRef<HTMLInputElement>(null);
   const [panel, setPanel] = useState<null | "link" | "ref">(null);
@@ -114,22 +114,26 @@ export function Toolbar({ editor }: { editor: Editor }) {
   return (
     <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="flex flex-wrap items-center gap-0.5 px-2 py-1">
-        <select
-          className="h-8 rounded border border-slate-200 bg-white px-2 text-sm"
-          value={s.block}
-          disabled={s.inCode || s.inTable}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v === "p") chain().setParagraph().run();
-            else chain().setHeading({ level: v === "h2" ? 2 : 3 }).run();
-          }}
-          title="Paragraph or subheading"
-        >
-          <option value="p">Paragraph</option>
-          <option value="h2">Subsection (1.1)</option>
-          <option value="h3">Sub-subsection (1.1.1)</option>
-        </select>
-        <Sep />
+        {headings && (
+          <>
+            <select
+              className="h-8 rounded border border-slate-200 bg-white px-2 text-sm"
+              value={s.block}
+              disabled={s.inCode || s.inTable}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "p") chain().setParagraph().run();
+                else chain().setHeading({ level: v === "h2" ? 2 : 3 }).run();
+              }}
+              title="Paragraph or subheading"
+            >
+              <option value="p">Paragraph</option>
+              <option value="h2">Subsection (1.1)</option>
+              <option value="h3">Sub-subsection (1.1.1)</option>
+            </select>
+            <Sep />
+          </>
+        )}
         <Btn title="Bold (Ctrl+B)" active={s.bold} disabled={s.inCode} onClick={() => chain().toggleBold().run()}>
           <Bold size={16} />
         </Btn>

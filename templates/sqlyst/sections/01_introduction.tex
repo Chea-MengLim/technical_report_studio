@@ -1,0 +1,39 @@
+% =====================================================================
+%  sections/01_introduction.tex  --  I. INTRODUCTION
+% =====================================================================
+\section{INTRODUCTION}
+\label{sec:introduction}
+
+In modern enterprise environments, rapid access to actionable financial insights is essential for maintaining a competitive edge and driving strategic growth. Relational databases store vast amounts of critical business information, ranging from sales transactions and inventory balances to complex purchasing logs. However, extracting actionable intelligence from these structured repositories traditional requires specialized technical capabilities, such as writing complex Structured Query Language (SQL) queries, executing statistical scripts, and configuring custom visualization dashboards. This technical entry barrier creates a persistent dependency on dedicated data teams, resulting in decision-making bottlenecks for non-technical stakeholders. To bridge this gap, natural language interfaces to databases (NL-to-SQL) have emerged as a powerful paradigm, enabling intuitive human-computer interaction. To address these operational challenges, \projname{} was developed as an end-to-end, AI-driven platform for financial data analysis. By enabling users to interact with structured datasets, such as the Kyungrinara financial dataset, through conversational natural language, \projname{} transforms complex analytical workflows into accessible, interactive dialogues, seamlessly coupling historical query generation with predictive forecasting and dynamic reporting.
+
+% ---------------------------------------------------------------------
+\subsection{Problem Statement}
+\label{sub:problem-statement}
+
+\noindent Despite recent advancements in Large Language Models (LLMs) and natural language interfaces, bridging the gap between non-technical queries and deterministic financial analytics presents severe technical barriers. Financial database schemas are inherently complex, featuring dense relational structures, intricate foreign key dependencies, and non-intuitive field naming conventions. Passing entire enterprise schemas directly into LLM prompts quickly exhausts context window limitations, increases token latency, and impairs the model's structural reasoning. Furthermore, generative LLMs are prone to domain misinterpretation and schema hallucinations, often producing syntactically invalid SQL queries or incorrect table joins that invalidate financial output and undermine user trust.
+
+\noindent These architectural challenges are further compounded when attempting to perform time-series modeling and predictive analytics directly on database outputs. While LLMs excel at language understanding, they struggle with deterministic statistical execution and complex numerical calculations. Attempting to generate automated statistical forecasts directly from raw user queries often leads to model confusion, especially when handling sparse or noisy data. Consequently, organizations struggle to deploy lightweight, accessible tools that balance natural language processing with reliable, execution-safe database querying and forward-looking forecasting capabilities.
+
+% ---------------------------------------------------------------------
+\subsection{Project Goal \& Motivation}
+\label{sub:goal-motivation}
+
+\noindent \projname{} is a web-based application designed to empower users to work
+with financial data easily, even without technical expertise. Its
+primary objective is to enable users to interact with the data
+efficiently and conveniently using natural language. \projname{} covers
+all steps of the financial data analysis process, allowing users to ask
+questions, generate detailed and customisable reports, visualise data
+through charts and graphs, and perform forecasting to predict future
+trends. By providing these capabilities within a single platform,
+\projname{} streamlines financial data analysis for faster
+decision-making.
+
+\noindent \projname{} was developed to address the challenges companies face
+throughout the financial data analysis process, from retrieving complex
+financial data to transforming it into meaningful insights. Guided by
+the vision \emph{``Simplified data amplifies insight''}, \projname{}
+empowers businesses to make faster, smarter, and more data-driven
+decisions. By integrating natural language processing and intelligent
+querying, the platform simplifies data interaction and enhances
+analytical efficiency across all levels of expertise.

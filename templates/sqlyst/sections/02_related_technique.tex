@@ -1,0 +1,117 @@
+% =====================================================================
+%  sections/02_related_technique.tex  --  II. RELATED TECHNIQUE
+%
+%  Each entry keeps the same shape: a short definition, then a short
+%  paragraph on why it was chosen for this project.
+% =====================================================================
+\section{RELATED TECHNOLOGIES}
+\label{sec:related-technologies}
+
+% ---------------------------------------------------------------------
+\subsection{Core Technologies}
+\label{sub:core-technologies}
+This section outlines the core programming languages, frameworks, and technologies used to build \projname{}, along with the rationale behind each choice.
+
+\subsubsection{Python}
+Python is an interpreted, object-oriented, high-level programming
+language known for its readability and its large ecosystem of libraries
+for data analysis and machine learning.
+
+\noindent \textbf{Why we chose it.} Every core AI and data component of
+\projname{}, including the Retrieval-Augmented Generation (RAG) schema
+pipeline, vector index management, and time-series forecasting engine, is
+distributed as a Python library. Using Python across the backend unifies
+\projname{}'s analytical and generative workflows into a single runtime,
+eliminating inter-service serialization overhead and language boundaries.
+
+\subsubsection{Large Language Models (LLMs)}
+An LLM is an AI model trained on large volumes of text that can
+recognise patterns, understand context, and produce coherent responses
+across many language-based tasks.
+
+\noindent \textbf{Why we chose it.} Translating user financial prompts into
+executable PostgreSQL queries requires parsing natural language that is
+frequently ambiguous, domain-specific, or variable in structure. An LLM
+serves as \projname{}'s primary translation engine, handling diverse user
+phrasings, schema relationships, and query formulations far beyond the
+scope of static keyword parsers.
+
+\subsubsection{Next.js}
+Next.js is a React framework for building full-stack web applications,
+with server-side rendering, incremental static regeneration, and
+integrated API routes.
+
+\noindent \textbf{Why we chose it.} The \projname{} interface requires reactive,
+real-time updates across multiple components, including conversational chat,
+financial dashboards, custom report builders, and forecasting modules.
+Next.js provides a robust React component architecture and server-side
+rendering that allows \projname{} to stream model responses and dynamic
+charts seamlessly.
+
+\subsubsection{Tailwind CSS}
+Tailwind CSS is a utility-first CSS framework that styles an application
+through utility classes instead of custom stylesheets, and keeps the
+result responsive.
+
+\noindent \textbf{Why we chose it.} With multiple team members collaborating
+simultaneously on \projname{}'s user interface, Tailwind CSS enforced consistent
+design standards across spacing, color schemes, and typography. Its
+utility-first approach ensured responsive rendering for \projname{}'s data tables
+and interactive visualization panels without CSS merge conflicts.
+
+\subsubsection{FastAPI}
+FastAPI is a high-performance Python web framework built on standard
+type hints, using Pydantic for validation and generating OpenAPI
+documentation automatically.
+
+\noindent \textbf{Why we chose it.} FastAPI seamlessly connects \projname{}'s Next.js frontend
+to the underlying Python AI pipeline. Its asynchronous execution handles
+long-running LLM query processing and database fetches efficiently, while
+automatic Pydantic data validation ensures structured API request payloads
+between \projname{}'s components.
+
+% ---------------------------------------------------------------------
+\subsection{Libraries}
+\label{sub:libraries}
+This section outlines the core libraries and frameworks used to power \projname{}'s AI and data pipeline, along with the rationale behind each choice.
+
+\subsubsection{LangChain}
+LangChain is a framework for building applications powered by large
+language models, providing abstractions that connect models to external
+data sources, memory, and workflows.
+
+\noindent \textbf{Why we chose it.} LangChain supplies the modular abstractions required for
+\projname{}'s natural-language-to-SQL engine, specifically prompt templating,
+vector database connection, and conversational chat memory. This allowed
+the development effort to focus directly on schema retrieval optimization and
+SQL generation logic.
+
+\subsubsection{LangGraph}
+LangGraph extends LangChain with a graph-based architecture, letting
+developers express stateful, multi-step workflows as nodes and edges
+with explicit control logic.
+
+\noindent \textbf{Why we chose it.} Processing a user query in \projname{} involves a multi-step
+decision flow rather than a simple prompt-response pair. LangGraph models
+\projname{}'s execution graph, enabling deterministic routing such as short-circuiting
+out-of-scope prompts, validating SQL syntax, and applying automated retry logic
+if a database query fails.
+
+\subsubsection{Chroma}
+Chroma is an open-source, AI-native vector database that stores
+embeddings and runs locally with minimal setup.
+
+\noindent \textbf{Why we chose it.} Financial database schemas contain too many tables,
+columns, and relationships to fit inside an LLM's prompt window. \projname{} uses
+Chroma to index table schemas and retrieve only the most relevant schema fragments
+for a given query, while keeping all data locally hosted for strict database privacy.
+
+\subsubsection{Prophet}
+Prophet is an open-source forecasting library from Meta (Facebook) for
+time series data, modelling trend, seasonality, and holiday effects.
+
+\noindent \textbf{Why we chose it.} Financial datasets like Kyungrinara exhibit strong
+weekly, monthly, and seasonal purchasing cycles. Prophet powers \projname{}'s
+forecasting engine by calculating time-series trends and generating upper and
+lower uncertainty bounds, which \projname{} visualizes directly as confidence intervals
+on its forecasting page.

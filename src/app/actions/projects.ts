@@ -8,6 +8,7 @@ import { db, schema } from "@/db";
 import { requireAdmin, requireProjectById } from "@/lib/auth";
 import { emptyDoc } from "@/lib/doc";
 import { startBuild } from "@/lib/latex/build";
+import { importReportContent } from "@/lib/import/report-template";
 
 // ---------------------------------------------------------------- editors
 
@@ -173,17 +174,26 @@ export async function createProject(_prev: string | null, form: FormData): Promi
     .insert(schema.projects)
     .values({ name, slug, footerName: `${name} Web Application`, bookOrder: max + 1 })
     .returning();
-  await db.insert(schema.sections).values(
-    DEFAULT_SECTIONS.map((s, order) => ({
-      projectId: project.id,
-      kind: s.kind,
-      title: s.title,
-      order,
-      newPage: s.newPage ?? false,
-      special: s.special ?? null,
-      content: emptyDoc(),
-    })),
-  );
+  // Start from the finished SQLyst report so editors replace text instead of
+  // writing from scratch. Fall back to empty chapters if the template is missing.
+  try {
+    await importReportContent(project.id, name);
+  } catch (err) {
+    console.error("Could not copy the SQLyst template, creating empty sections instead:", err);
+    await db.delete(schema.sections).where(eq(schema.sections.projectId, project.id));
+    await db.delete(schema.references).where(eq(schema.references.projectId, project.id));
+    await db.insert(schema.sections).values(
+      DEFAULT_SECTIONS.map((s, order) => ({
+        projectId: project.id,
+        kind: s.kind,
+        title: s.title,
+        order,
+        newPage: s.newPage ?? false,
+        special: s.special ?? null,
+        content: emptyDoc(),
+      })),
+    );
+  }
   revalidatePath("/", "layout");
   redirect(`/admin/projects`);
 }

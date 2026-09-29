@@ -20,8 +20,10 @@ ENV NODE_ENV=production \
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
-# Read at runtime: database migrations and the LaTeX templates.
+# Read at runtime: database migrations, the LaTeX templates and the
+# SQLyst report that new projects start from.
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/latex ./latex
+COPY --from=build /app/templates ./templates
 EXPOSE 3000
 CMD ["node", "server.js"]

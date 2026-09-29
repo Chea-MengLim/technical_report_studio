@@ -17,11 +17,25 @@ export default async function SectionPage({ params }: PageProps<"/projects/[slug
   if (!section) notFound();
 
   const others = await db
-    .select({ id: schema.sections.id, title: schema.sections.title, content: schema.sections.content })
+    .select({ id: schema.sections.id, title: schema.sections.title, content: schema.sections.content, kind: schema.sections.kind })
     .from(schema.sections)
     .where(eq(schema.sections.projectId, project.id))
     .orderBy(asc(schema.sections.order));
   const otherTargets = collectRefTargets(others.filter((s) => s.id !== section.id));
+
+  // Chapter number as printed: chapters 1, 2 ..., then References, then appendices.
+  const [ref] = await db
+    .select({ id: schema.references.id })
+    .from(schema.references)
+    .where(eq(schema.references.projectId, project.id))
+    .limit(1);
+  const ofKind = (k: string) => others.filter((s) => s.kind === k);
+  const chapter =
+    section.kind === "BODY"
+      ? ofKind("BODY").findIndex((s) => s.id === section.id) + 1
+      : section.kind === "APPENDIX"
+        ? ofKind("BODY").length + (ref ? 1 : 0) + ofKind("APPENDIX").findIndex((s) => s.id === section.id) + 1
+        : null;
 
   return (
     <SectionEditor
@@ -31,8 +45,10 @@ export default async function SectionPage({ params }: PageProps<"/projects/[slug
       projectName={project.name}
       otherTargets={otherTargets}
       isAdmin={user.role === "ADMIN"}
+      chapter={chapter}
       headerExtra={
         <SectionSettings
+          key="settings"
           sectionId={section.id}
           kind={section.kind}
           newPage={section.newPage}

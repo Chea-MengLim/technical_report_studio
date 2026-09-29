@@ -1,0 +1,63 @@
+% =====================================================================
+%  sections/06_implementation.tex  --  VI. IMPLEMENTATION
+% =====================================================================
+\clearpage
+\section{IMPLEMENTATION}
+\label{sec:implementation}
+
+% ---------------------------------------------------------------------
+\subsection{Application Flow}
+\label{sub:application-flow}
+
+This diagram traces a single user query end to end through the running
+system, showing the concrete sequence of steps behind the AI
+architecture described earlier. It follows the request from language
+detection and vector store retrieval through LLM query execution to
+the final explanation returned to the user.
+
+\projfigure{0.95}{fig-application-flow.png}{\protect\projnameplain{}'s end-to-end query processing flow, from user query and language detection through vector store retrieval, LLM query execution, and final result explanation.}{fig:application-flow}
+
+% ---------------------------------------------------------------------
+\subsection{Implementation Challenges and Solutions}
+\label{sub:implementation-challenges-and-solutions}
+
+Three challenges shaped the way the system was built.
+
+\subsubsection*{1. The database schema was too large for a single prompt}
+Our first approach placed the whole schema in the prompt so the model
+could see every table and column. The prompt quickly grew past a
+practical size, responses slowed down, and accuracy dropped because the
+relevant tables were buried among unrelated ones.
+
+\noindent \textbf{How we solved it.} We embedded the table and column descriptions
+into a Chroma vector store and retrieve only the fragments that match
+the current question. The prompt now carries a small, relevant slice of
+the schema instead of all of it, which shortened response time and
+improved the quality of the generated SQL.
+
+\subsubsection*{2. Questions arrive in two languages}
+The Kyungrinara dataset uses Korean labels while most of our team and
+our schema documentation are in English. Questions asked in Korean did
+not match the stored schema descriptions, so retrieval returned the
+wrong tables.
+
+\noindent \textbf{How we solved it.} A detection step identifies Korean by
+checking the message against the Hangul character range, falling back to
+a language-detection library only for other scripts. Korean questions
+are translated to English before retrieval, so one English schema index
+serves both languages instead of maintaining two.
+
+\subsubsection*{3. Generated SQL is not always valid}
+The model sometimes returned a statement wrapped in markdown fences,
+written in a dialect PostgreSQL does not accept, or truncated with
+unbalanced parentheses. A query could also be perfectly valid yet return
+no rows, which left the interface with an empty chart and no
+explanation.
+
+\noindent \textbf{How we solved it.} Every generated statement passes through a
+cleaning and validation step that strips markdown fences, converts
+dialect differences, and rejects a query missing a \code{SELECT} clause
+or with unbalanced parentheses. Failures are fed back to the model as
+error context for a bounded number of retries, and an empty result is
+tagged so the same handler reports it to the user in words rather than
+showing a blank chart.

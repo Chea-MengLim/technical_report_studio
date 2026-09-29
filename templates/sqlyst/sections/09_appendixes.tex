@@ -1,0 +1,401 @@
+% =====================================================================
+%  sections/09_appendixes.tex  --  X. APPENDIXES
+% =====================================================================
+\clearpage
+\section{APPENDIXES}
+\label{sec:appendixes}
+
+% ---------------------------------------------------------------------
+\subsection{Entity-Relationship Diagram}
+\label{sub:erm-diagram}
+
+The diagram below documents the underlying database schema that powers
+\projname{}, including the Kyungrinara financial dataset referenced
+throughout this report. It maps the core tables together with their
+primary and foreign key relationships, providing the structural
+reference that the schema retrieval and SQL generation steps described
+in earlier sections rely on.
+
+\projfigure{0.95}{fig-erm-diagram}{Entity-relationship diagram of \protect\projnameplain{}'s database schema, showing the core tables and their relationships.}{fig:erm-diagram}
+
+% ---------------------------------------------------------------------
+\subsection{Text2SQL Service}
+\label{sub:text2sql-service}
+
+\code{text2sql\_service.py} implements the chat entry point that
+converts a user question into an SQL-backed answer. It loads prior
+chat history as context, invokes the LangGraph agent, extracts the
+explanation, visualization payload, and follow-up questions from the
+agent's response, persists the exchange to chat history, and falls
+back to an error or timeout message if any step fails.
+
+\begin{lstlisting}[style=python, numbers=none, caption={Text2SQL chat service (\code{text2sql\_service.py})}, label={lst:text2sql-service}]
+from uuid import UUID
+from typing import List
+import re
+import uuid
+
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
+from sqlyst_app.core.exceptions.exception import NotFoundException
+from sqlyst_app.llm.agent_graph import create_agent_graph
+from sqlalchemy.orm import Session
+from sqlyst_app.crud.chat_histories import ChatHistoriesCrud
+from sqlyst_app.crud.chat_session import ChatSessionCrud
+from sqlyst_app.schemas.chat_histories import ChatHistoriesRequest, ChatHistoriesResponse
+from sqlyst_app.schemas.chat_schema import ChatResponse
+from sqlyst_app.utils.response_utils import clean_response_for_display, extract_follow_up_questions_from_response, extract_json_from_response, keep_only_insights
+
+agent = None
+crud = ChatHistoriesCrud()
+session_crud = ChatSessionCrud()
+
+def get_agent():
+    global agent
+    if agent is None:
+        agent = create_agent_graph()
+    return agent
+
+
+class Text2SQLService:
+    """Service to generate SQL queries from natural language."""
+
+    def _convert_chat_history_to_messages(self, chat_histories: List[ChatHistoriesResponse]) -> List:
+        """Convert chat history to context messages using only user query and SQL query."""
+        messages = []
+
+        for i, history in enumerate(chat_histories):
+
+            # Add user message
+            messages.append(HumanMessage(content=history.user_message))
+
+            # Add AI response with only SQL query context (not full explanation)
+            if history.model_response:
+
+                if isinstance(history.model_response, dict):
+                    # Extract SQL query for context - check multiple possible locations
+                    sql_query = ""
+
+                    # Check direct sql_query field
+                    if "sql_query" in history.model_response:
+                        sql_query = history.model_response["sql_query"]
+
+
+                    # Create minimal AI response with just SQL context
+                    if sql_query:
+                        ai_content = f"Previous query used: {sql_query}"
+                        messages.append(AIMessage(content=ai_content))
+                    else:
+                        # Still add a generic AI message to maintain conversation flow
+                        messages.append(AIMessage(content="Previous response generated"))
+                else:
+                    print(f"Model response is not a dict: {type(history.model_response)}")
+
+        return messages
+
+    def _save_chat_history(self, query: str, session_id: UUID, model_response: dict, db: Session, visual_source_id: UUID = None) -> UUID:
+        """
+        Save chat history with visual_source creation.
+        If visual_source_id is provided, uses it; otherwise creates a new one.
+        Returns the chat_history_id (visual_source_id).
+        """
+        # If visual_source_id not provided, create one
+        if visual_source_id is None:
+            # Always create visual_source to satisfy foreign key constraint
+            # The database requires chat_history_id to reference a valid visual_source_id
+            from sqlyst_app.crud.visual_source import insert_visual_source
+            visual_source = insert_visual_source(db, "CHAT", None)
+            # Commit visual_source to ensure it exists before creating chat_history with foreign key reference
+            db.commit()
+            chat_history_id = visual_source.visual_source_id
+        else:
+            chat_history_id = visual_source_id
+
+        # Save chat history
+        crud.create_chat_history(ChatHistoriesRequest(
+            session_id=session_id,
+            user_message=query,
+            model_response=model_response
+        ), db, chat_history_id=chat_history_id)
+
+        return chat_history_id
+
+
+    def chat(self, query: str, session_id: UUID, db: Session, user_id: UUID, user_name: str = None) -> ChatResponse:
+        """Process chat query and return response with follow-up questions and visualization data."""
+
+        session = session_crud.get_session_by_id_and_user_id(session_id, user_id, db)
+        if not session:
+            raise NotFoundException(f"Session not found for user: {user_id}")
+
+        history_saved = False
+        try:
+            # Get chat history context
+            context = crud.get_context_chat_histories_by_session_id(session_id, db)
+
+            # Convert to BaseMessage format
+            chat_messages = self._convert_chat_history_to_messages(context)
+
+            # Add current query
+            current_message = HumanMessage(content=query)
+
+            # Invoke agent with proper message format
+            response = get_agent().invoke({
+                "messages": [current_message],
+                "chat_history": chat_messages,
+                "user_name": user_name
+            })
+
+
+            print("DEBUG: response",response)
+
+            if not response or not response.get("messages"):
+                raise ValueError("Agent returned empty response")
+
+            # Extract response data safely
+            messages = response.get("messages", [])
+
+            print("DEBUG: messages",messages)
+
+            explanation = messages[-1].content if messages else "No response generated"
+
+            print("DEBUG: explanation before extract_json_from_response",explanation)
+            # Extract visualization data and follow-up questions from the raw response
+            viz_json = extract_json_from_response(explanation)
+
+            print("DEBUG: viz_json",viz_json)
+
+            # Extract follow-up questions before cleaning - check for FOLLOW_UP_QUESTIONS section
+            has_follow_ups = (
+                "FOLLOW_UP_QUESTIONS" in explanation or
+                "\uD6C4\uC18D \uC9C8\uBB38" in explanation or  # "Follow-up question" (Korean)
+                re.search(r'#{1,6}\s*FOLLOW_UP_QUESTIONS', explanation, re.IGNORECASE)
+            )
+            follow_up_questions = extract_follow_up_questions_from_response(explanation) if has_follow_ups else []
+
+            # Clean explanation: keep INSIGHTS if exists, otherwise keep plain text (removes FOLLOW_UP_QUESTIONS)
+            explanation = keep_only_insights(explanation)
+
+            # Store visual in item_container if visualization data exists
+            item_id = None
+
+            # Always create visual_source to satisfy foreign key constraint
+            # The database requires chat_history_id to reference a valid visual_source_id
+            from sqlyst_app.crud.visual_source import insert_visual_source
+            visual_source = insert_visual_source(db, "CHAT", None)
+            # Commit visual_source to ensure it exists before creating chat_history with foreign key reference
+            db.commit()
+
+            # Use visual_source_id as chat_history_id (same as forecast_id = visual_source_id)
+            chat_history_id = visual_source.visual_source_id
+
+            if viz_json:
+                from sqlyst_app.crud.visuals import insert_visual_from_forecast_and_chat_response
+
+                # Prepare visual data
+                viz_json["is_stored"] = False
+                chart_type = viz_json.get("chart_type", "line")
+                if chart_type not in ["bar", "line", "pie", "table"]:
+                    chart_type = "line"
+                # Add "chat_" prefix to chart_type
+                if not chart_type.startswith("chat_"):
+                    chart_type = f"chat_{chart_type}"
+                viz_json["chart_type"] = chart_type
+
+                # Insert visual using the same function as forecast
+                visual = insert_visual_from_forecast_and_chat_response(
+                    db, viz_json, visual_source.visual_source_id, user_id
+                )
+                item_id = visual.item_id
+                viz_json["item_id"] = str(item_id)
+
+            # Follow-up questions already extracted above
+
+            # Create clean response for storage
+            clean_response = {
+                "explanation": explanation,
+                "sql_query": response.get("sql_query", ""),
+            }
+            if item_id:
+                clean_response["visualization_item_id"] = str(item_id)
+
+            # Save chat history with chat_history_id (from visual_source_id if visual exists)
+            self._save_chat_history(query, session_id, clean_response, db, chat_history_id)
+            history_saved = True
+
+            chat_response = ChatResponse(
+                explanation=explanation,
+                follow_up_questions=follow_up_questions,
+                visualization_data=viz_json
+            )
+
+            return chat_response
+
+        except Exception as e:
+            # Handle errors gracefully
+            print(f"ERROR in service: {str(e)}")
+
+            # Create error response message
+            error_message = f"There is an error processing your request. Please try again."
+
+            # Create error response for storage
+            error_response = {
+                "explanation": error_message,
+                "sql_query": "",
+                "error": str(e)
+            }
+
+            # Save error to chat history to maintain conversation flow
+            try:
+                self._save_chat_history(query, session_id, error_response, db)
+                history_saved = True
+            except Exception as save_error:
+                # If saving to history fails, log but don't fail the request
+                print(f"ERROR saving to chat history: {str(save_error)}")
+
+            return ChatResponse(
+                explanation=error_message,
+                follow_up_questions=[],
+                visualization_data=None
+            )
+        finally:
+            # Save timeout error if history wasn't saved (e.g., timeout interrupted execution)
+            if not history_saved:
+                try:
+                    timeout_response = {
+                        "explanation": "Request timeout. The AI is taking longer than expected to process your query. Please try again with a simpler question.",
+                        "sql_query": "",
+                        "error": "TimeoutError"
+                    }
+                    self._save_chat_history(query, session_id, timeout_response, db)
+                except Exception as save_error:
+                    print(f"ERROR saving timeout to chat history: {str(save_error)}")
+\end{lstlisting}
+
+% ---------------------------------------------------------------------
+\subsection{LLM Factory}
+\label{sub:llm-factory}
+
+\code{llm\_factory.py} centralizes construction of the language,
+Text2SQL, and embedding model clients used across the agent pipeline,
+lazily loading the local Ollama models and exposing thin
+generation/embedding helpers around the vLLM-served Text2SQL and
+embedding endpoints.
+
+\begin{lstlisting}[style=python, caption={Model client factory (\code{llm\_factory.py})}, label={lst:llm-factory}]
+import os
+
+import openai
+from langchain_ollama import OllamaLLM
+
+
+def _ollama_base_url() -> str:
+    """Resolve the Ollama base URL, defaulting to the host gateway."""
+    return os.environ.get("OLLAMA_BASE_URL", "http://localhost:11435")
+
+# Global model instances for lazy loading (only for Ollama models)
+_translator_model = None
+_reasoning_model = None
+def translatorModel():
+    """Lazy load the translator model."""
+    global _translator_model
+    if _translator_model is None:
+        _translator_model = OllamaLLM(
+            model="timHan/llama3korean8B4QKM:latest",
+            base_url=_ollama_base_url(),
+            timeout=20,
+        )
+    return _translator_model
+
+# Text2SQL model configuration
+TEXT2SQL_VLLM_API_BASE = os.environ.get("VLLM_API_BASE", "http://localhost:8007/v1")
+TEXT2SQL_MODEL_NAME = "Snowflake/Arctic-Text2SQL-R1-7B"
+
+# Embedding model configuration
+EMBED_VLLM_API_BASE = os.environ.get("EMBED_VLLM_API_BASE", "http://localhost:8008/v1")
+EMBED_MODEL_NAME = "Snowflake/snowflake-arctic-embed-m"
+
+def text2SqlModel():
+    """Get the Text2SQL model client."""
+    return openai.OpenAI(
+        api_key="sk-not-needed",
+        base_url=TEXT2SQL_VLLM_API_BASE
+    )
+
+
+def text2sql_generate(
+    prompt: str,
+    max_tokens: int = 400,
+    temperature: float = 0.0
+) -> str:
+    """
+    Convenience method to generate SQL using the Text2SQL model (completion model).
+
+    Args:
+        prompt: Complete prompt string (can include instructions, schema, user question, etc.)
+        max_tokens: Maximum tokens to generate (default: 200)
+        temperature: Sampling temperature (default: 0.0 for deterministic SQL)
+
+    Returns:
+        Generated SQL query as string
+    """
+    client = text2SqlModel()
+
+    response = client.completions.create(
+        model=TEXT2SQL_MODEL_NAME,
+        prompt=prompt,
+        max_tokens=max_tokens,
+        temperature=temperature
+    )
+    return response.choices[0].text
+
+def reasoningModel() -> OllamaLLM:
+    """Lazy load the reasoning model."""
+    global _reasoning_model
+    if _reasoning_model is None:
+        print("Loading reasoning model")
+        model_name = "llama3.1:8b"
+        _reasoning_model = OllamaLLM(
+            model=model_name,
+            base_url=_ollama_base_url(),
+            timeout=30,
+            num_gpu=-1
+        )
+        print("Reasoning model loaded successfully")
+
+    return _reasoning_model
+
+def embedModel():
+    """Get the embedding model client."""
+    return openai.OpenAI(
+        api_key="sk-not-needed",
+        base_url=EMBED_VLLM_API_BASE
+    )
+
+
+def embed_generate(
+    texts: list[str] | str
+) -> list[list[float]]:
+    """
+    Convenience method to generate embeddings using the embedding model.
+
+    Args:
+        texts: Single text string or list of text strings to embed
+
+    Returns:
+        List of embedding vectors (each as a list of floats)
+    """
+    client = embedModel()
+
+    # Ensure texts is a list
+    if isinstance(texts, str):
+        texts = [texts]
+
+    response = client.embeddings.create(
+        model=EMBED_MODEL_NAME,
+        input=texts
+    )
+
+    # Extract embeddings from response
+    embeddings = [item.embedding for item in response.data]
+    return embeddings
+\end{lstlisting}

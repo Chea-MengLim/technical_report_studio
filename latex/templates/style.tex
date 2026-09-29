@@ -82,6 +82,9 @@
 % =====================================================================
 
 \setlength{\parindent}{0pt}
+% ragged2e's \justifying (below) resets \parindent to \JustifyingParindent,
+% which defaults to 15pt; set it to 0 too so no paragraph is indented.
+\setlength{\JustifyingParindent}{0pt}
 \setlength{\parskip}{6pt plus 1pt minus 1pt}
 \linespread{1.05}
 \raggedbottom

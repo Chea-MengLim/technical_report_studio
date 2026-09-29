@@ -110,7 +110,11 @@ export const ReportTable = Table.extend({
 const Cell = TableCell.extend({ content: "paragraph+" });
 const Header = TableHeader.extend({ content: "paragraph+" });
 
-export function editorExtensions(): Extensions {
+/**
+ * headings: false is used for the boxes of the structured editor: headings are
+ * fields there, so a box cannot contain one (pasted headings become paragraphs).
+ */
+export function editorExtensions({ headings = true, placeholder = "Write here…" } = {}): Extensions {
   return [
     StarterKit.configure({
       heading: false,
@@ -121,7 +125,7 @@ export function editorExtensions(): Extensions {
       horizontalRule: false,
       link: { openOnClick: false, autolink: true, defaultProtocol: "https" },
     }),
-    SectionHeading,
+    ...(headings ? [SectionHeading] : []),
     Figure,
     PageBreak,
     ProjectName,
@@ -131,6 +135,6 @@ export function editorExtensions(): Extensions {
     TableRow,
     Header,
     Cell,
-    Placeholder.configure({ placeholder: "Write here…" }),
+    Placeholder.configure({ placeholder }),
   ];
 }

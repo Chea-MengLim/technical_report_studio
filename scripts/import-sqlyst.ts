@@ -17,15 +17,8 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { bootstrap } from "@/lib/bootstrap";
 import { createAsset } from "@/lib/assets";
-import {
-  collectLabels,
-  parseInline,
-  parseSectionsFile,
-  readGroup,
-  stripComments,
-  type ImportContext,
-} from "@/lib/import/latex-to-doc";
-import type { DocNode } from "@/lib/doc";
+import { stripComments } from "@/lib/import/latex-to-doc";
+import { importReportContent } from "@/lib/import/report-template";
 
 const args = process.argv.slice(2);
 const force = args.includes("--force");
@@ -108,96 +101,9 @@ async function main() {
   }
   console.log(`Imported ${members.length} team members.`);
 
-  // --------------------------------------------------------------- images
-  const imageCache = new Map<string, string>();
-  const figureFiles = fs.readdirSync(path.join(root, "figures"));
-  const imagesToUpload = new Set<string>();
-  const warnings: string[] = [];
-
-  const sectionFiles = fs
-    .readdirSync(path.join(root, "sections"))
-    .filter((f) => f.endsWith(".tex"))
-    .sort();
-  const allSrc = sectionFiles.map((f) => read(`sections/${f}`)).join("\n");
-  for (const m of allSrc.matchAll(/\\projfigure\{[^}]*\}\{([^}]+)\}/g)) imagesToUpload.add(m[1]);
-  for (const file of imagesToUpload) {
-    const name = figureFiles.find((f) => f === file || f.replace(/\.(png|jpe?g|pdf)$/i, "") === file);
-    if (!name) continue;
-    const asset = await upload(`figures/${name}`, project.id);
-    imageCache.set(file, asset.id);
-  }
-
-  const ctx: ImportContext = {
-    projectName: NAME,
-    labels: new Map(),
-    resolveImage: (file) => imageCache.get(file) ?? null,
-    warnings,
-  };
-  collectLabels(allSrc, ctx.labels);
-
-  // -------------------------------------------------------- front matter
-  type NewSection = typeof schema.sections.$inferInsert;
-  const rows: NewSection[] = [];
-  const front = (file: string) =>
-    read(file)
-      .replace(/\{\\raggedright[^\n]*\\par\}/, "") // hand-written title
-      .replace(/\\vspace\{[^}]*\}/g, "")
-      .replace(/\\clearpage/g, "");
-
-  const aboutIntro = front("frontmatter/aboutauthor.tex").split(/%\s*Row 1/)[0];
-  const doc = (src: string): DocNode => ({
-    type: "doc",
-    content: stripComments(src)
-      .split(/\n\s*\n/)
-      .map((p) => parseInline(p, ctx))
-      .filter((c) => c.length)
-      .map((content) => ({ type: "paragraph", content })),
-  });
-  rows.push(
-    { kind: "FRONT", title: "Project Contributors", newPage: true, special: "contributors", content: doc(aboutIntro) },
-    { kind: "FRONT", title: "Acknowledgement", newPage: false, content: doc(front("frontmatter/acknowledgement.tex")) },
-    { kind: "FRONT", title: "Executive Summary", newPage: true, content: doc(front("frontmatter/preface.tex")) },
-  );
-
-  // ----------------------------------------------------------- sections
-  for (const file of sectionFiles) {
-    ctx.warnings.push(`--- ${file}`);
-    for (const s of parseSectionsFile(read(`sections/${file}`), ctx)) {
-      if (!s.title) continue;
-      const kind = /append/i.test(s.title) ? "APPENDIX" : "BODY";
-      rows.push({ kind, title: titleCase(s.title), newPage: s.newPage, content: s.content });
-    }
-  }
-
-  let order = 0;
-  for (const r of rows) {
-    const [section] = await db
-      .insert(schema.sections)
-      .values({ ...r, projectId: project.id, order: order++ })
-      .returning();
-    await db.insert(schema.sectionRevisions).values({
-      sectionId: section.id,
-      title: section.title,
-      content: section.content,
-    });
-  }
-  console.log(`Imported ${rows.length} sections.`);
-
-  // ---------------------------------------------------------- references
-  const bib = read("references.bib");
-  const entries = [...bib.matchAll(/@\w+\{[^,]+,\s*key\s*=\s*\{([^}]+)\},\s*howpublished\s*=\s*/g)]
-    .map((m) => {
-      const start = m.index! + m[0].length;
-      const [how] = readGroup(bib, start);
-      const url = /\\url\{([^}]+)\}/.exec(how)?.[1] ?? "";
-      const text = how.replace(/\\url\{[^}]+\}/, "").replace(/:\s*$/, "").trim();
-      return { key: m[1], text, url };
-    })
-    .sort((a, b) => a.key.localeCompare(b.key)); // bibliographystyle{plain} sorts by key
-  for (const [i, e] of entries.entries()) {
-    await db.insert(schema.references).values({ projectId: project.id, order: i, text: e.text, url: e.url });
-  }
-  console.log(`Imported ${entries.length} references.`);
+  // ------------------------------------- sections, figures, references
+  const result = await importReportContent(project.id, NAME, root);
+  console.log(`Imported ${result.sections} sections, ${result.figures} figures, ${result.references} references.`);
 
   // ------------------------------------------------------ editor account
   if (SLUG === "sqlyst") {
@@ -213,17 +119,8 @@ async function main() {
     await db.insert(schema.projectMembers).values({ projectId: project.id, userId: editor.id }).onConflictDoNothing();
   }
 
-  const real = warnings.filter((w) => !w.startsWith("---"));
-  console.log(real.length ? `Import report:\n${warnings.join("\n")}` : "No import warnings.");
-}
-
-/** "RELATED TECHNOLOGIES" -> "Related Technologies" (the PDF prints titles in capitals anyway). */
-function titleCase(s: string) {
-  return s
-    .toLowerCase()
-    .replace(/\b([a-z])/g, (c) => c.toUpperCase())
-    .replace(/\b(And|Of|The|In|For|To)\b/g, (w) => w.toLowerCase())
-    .replace(/^./, (c) => c.toUpperCase());
+  const real = result.warnings.filter((w) => !w.startsWith("---"));
+  console.log(real.length ? `Import report:\n${result.warnings.join("\n")}` : "No import warnings.");
 }
 
 main()

@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { EditorContent, useEditor } from "@tiptap/react";
+import type { Editor } from "@tiptap/react";
 import { AlertTriangle, CheckCircle2, Loader2, Lock } from "lucide-react";
 import { collectRefTargets, type DocNode, type RefTarget } from "@/lib/doc";
 import { collectRefKinds, serializeDoc } from "@/lib/latex/serialize";
 import { acquireLock, forceUnlock, releaseLock, saveSection } from "@/app/actions/sections";
-import { editorExtensions } from "./extensions";
+import { StructuredBody, type StructuredBodyApi } from "./StructuredBody";
 import { EditorEnvContext, uploadAsset, type EditorEnv } from "./context";
 import { Toolbar } from "./Toolbar";
 import { TablePanel } from "./TablePanel";
@@ -25,6 +25,8 @@ interface Props {
   /** Referenceable blocks of the other sections of the project. */
   otherTargets: RefTarget[];
   isAdmin: boolean;
+  /** Arabic number of the chapter (for "2.1" headings); null for front matter and the preface. */
+  chapter?: number | null;
   /** Extra controls rendered next to the title (section settings). */
   headerExtra?: React.ReactNode;
 }
@@ -44,7 +46,7 @@ function checkDoc(doc: DocNode, targets: RefTarget[]): string[] {
   return [...new Set(warnings)];
 }
 
-export function SectionEditor({ section, projectId, projectName, otherTargets, isAdmin, headerExtra }: Props) {
+export function SectionEditor({ section, projectId, projectName, otherTargets, isAdmin, chapter = null, headerExtra }: Props) {
   const [lock, setLock] = useState<LockState>({ status: "acquiring" });
   const [save, setSave] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
@@ -56,30 +58,11 @@ export function SectionEditor({ section, projectId, projectName, otherTargets, i
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlight = useRef<Promise<void> | null>(null);
   const pending = useRef(false);
-  const baseline = useRef<string | null>(null);
-
-  const editor = useEditor({
-    extensions: editorExtensions(),
-    content: section.content,
-    editable: false,
-    immediatelyRender: false,
-    editorProps: { attributes: { class: "report-content" } },
-    // Tiptap normalises the stored document when it loads (default attributes,
-    // trailing paragraph); that is not an edit, so compare with this baseline.
-    onCreate: ({ editor: e }) => {
-      baseline.current = JSON.stringify(e.getJSON());
-    },
-    onUpdate: ({ editor: e }) => {
-      const json = e.getJSON() as DocNode;
-      setLiveDoc(json);
-      if (JSON.stringify(json) === baseline.current) return;
-      baseline.current = null;
-      scheduleSave();
-    },
-  });
+  const body = useRef<StructuredBodyApi | null>(null);
+  const [active, setActive] = useState<{ key: string; editor: Editor } | null>(null);
+  const getDoc = useCallback((): DocNode => body.current?.getDoc() ?? section.content, [section.content]);
 
   const flush = useCallback(async () => {
-    if (!editor) return;
     if (inFlight.current) {
       pending.current = true;
       return;
@@ -91,15 +74,12 @@ export function SectionEditor({ section, projectId, projectName, otherTargets, i
         setSave("saving");
         // ProseMirror keeps node attributes in null-prototype objects, which the
         // server action serializer drops silently: send plain JSON instead.
-        const content = JSON.parse(JSON.stringify(editor.getJSON())) as DocNode;
+        const content = JSON.parse(JSON.stringify(getDoc())) as DocNode;
         const res = await saveSection(section.id, { title: titleRef.current, content }, version.current).catch((e: Error) => ({ ok: false as const, reason: "error" as const, message: e.message }));
         if (!res.ok) {
           setSave("error");
           setError(res.message);
-          if (res.reason !== "error") {
-            editor.setEditable(false);
-            setLock({ status: "locked", by: "another session" });
-          }
+          if (res.reason !== "error") setLock({ status: "locked", by: "another session" });
           return;
         }
         version.current = res.version;
@@ -111,7 +91,7 @@ export function SectionEditor({ section, projectId, projectName, otherTargets, i
       inFlight.current = null;
     });
     await inFlight.current;
-  }, [editor, section.id]);
+  }, [getDoc, section.id]);
 
   const scheduleSave = useCallback(() => {
     setSave("dirty");
@@ -124,7 +104,6 @@ export function SectionEditor({ section, projectId, projectName, otherTargets, i
 
   // Take the lock, keep it alive, give it back when leaving.
   useEffect(() => {
-    if (!editor) return;
     let cancelled = false;
     let holding = false;
     const take = async () => {
@@ -137,11 +116,9 @@ export function SectionEditor({ section, projectId, projectName, otherTargets, i
           return;
         }
         holding = true;
-        editor.setEditable(true);
         setLock({ status: "editing" });
       } else {
         holding = false;
-        editor.setEditable(false);
         setLock({ status: "locked", by: res.lockedBy });
       }
     };
@@ -153,7 +130,7 @@ export function SectionEditor({ section, projectId, projectName, otherTargets, i
       if (timer.current) {
         clearTimeout(timer.current);
         timer.current = null;
-        const body = JSON.stringify({ title: titleRef.current, content: editor.getJSON(), version: version.current });
+        const body = JSON.stringify({ title: titleRef.current, content: getDoc(), version: version.current });
         if (body.length < 60_000) {
           void fetch(`/api/sections/${section.id}/save`, {
             method: "POST",
@@ -168,7 +145,7 @@ export function SectionEditor({ section, projectId, projectName, otherTargets, i
     };
     const warn = (e: BeforeUnloadEvent) => {
       // Small pending edits are sent on pagehide; only very large ones need a prompt.
-      if (timer.current && JSON.stringify(editor.getJSON()).length >= 60_000) e.preventDefault();
+      if (timer.current && JSON.stringify(getDoc()).length >= 60_000) e.preventDefault();
     };
     window.addEventListener("pagehide", unlock);
     window.addEventListener("beforeunload", warn);
@@ -180,7 +157,7 @@ export function SectionEditor({ section, projectId, projectName, otherTargets, i
       const done = timer.current ? (clearTimeout(timer.current), flush()) : Promise.resolve();
       void done.then(() => releaseLock(section.id)).catch(() => {});
     };
-  }, [editor, section.id, flush]);
+  }, [section.id, flush, getDoc]);
 
   const refTargets = useMemo(
     () => [...collectRefTargets([{ id: section.id, title, content: liveDoc }]), ...otherTargets],
@@ -246,10 +223,20 @@ export function SectionEditor({ section, projectId, projectName, otherTargets, i
         )}
 
         <div className="min-h-0 flex-1 overflow-auto bg-slate-100">
-          {editor && <Toolbar editor={editor} />}
-          {editor && <TablePanel editor={editor} />}
-          <div className="mx-auto my-6 max-w-[860px] rounded-sm bg-white px-14 py-10 shadow-sm">
-            <EditorContent editor={editor} />
+          {active && lock.status === "editing" && <Toolbar key={`toolbar-${active.key}`} editor={active.editor} headings={false} />}
+          {active && <TablePanel key={`table-${active.key}`} editor={active.editor} />}
+          <div className="mx-auto my-6 max-w-[900px] px-6">
+            <StructuredBody
+              initial={section.content}
+              chapter={chapter}
+              editable={lock.status === "editing"}
+              apiRef={body}
+              onChange={(doc) => {
+                setLiveDoc(doc);
+                scheduleSave();
+              }}
+              onActivate={(key, editor) => setActive((a) => (a?.editor === editor ? a : { key, editor }))}
+            />
           </div>
           {warnings.length > 0 && (
             <div className="mx-auto mb-10 max-w-[860px] rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">

@@ -1,0 +1,81 @@
+% =====================================================================
+%  sections/05_system_design.tex  --  V. SYSTEM DESIGN
+%  Each subsection holds its diagram and nothing else.
+% =====================================================================
+\clearpage
+\section{SYSTEM DESIGN}
+\label{sec:system-design}
+
+% ---------------------------------------------------------------------
+\subsection{System Architecture Diagram}
+\label{sub:system-architecture}
+
+The diagram below presents a high-level view of how \projname{}'s major
+layers fit together, from the client-facing web application down to the
+data and infrastructure that support it. It traces how a user request
+travels from the Next.js frontend through the FastAPI backend services
+to the PostgreSQL and analytics data layer, illustrating the boundaries
+of responsibility between presentation, business logic, and storage.
+
+\projfigure{0.95}{fig-system-architecture}{\protect\projnameplain{}'s overall system architecture, showing the flow between users, the Next.js frontend, the FastAPI backend services, the PostgreSQL and analytics data layer, and the underlying infrastructure components.}{fig:system-architecture}
+
+% ---------------------------------------------------------------------
+\clearpage
+\subsection{AI Architecture Diagram}
+\label{sub:ai-architecture}
+
+This diagram zooms into the AI layer introduced above, showing how a
+natural-language question is turned into a validated SQL query and a
+readable answer. It lays out the eight-step LangGraph workflow, from
+the input guardrail and language detection through schema retrieval,
+SQL generation, validation, and execution, ending with insight
+generation for the user.
+
+\projfigure{0.95}{fig-ai-architecture}{\protect\projnameplain{}'s AI agent pipeline, detailing the eight-step LangGraph workflow from input guardrail and language detection through schema retrieval, SQL generation, validation, execution, and insight generation.}{fig:ai-architecture}
+
+% ---------------------------------------------------------------------
+\clearpage
+\subsection{Use Case Diagram}
+\label{sub:use-case-diagram}
+
+The use case diagram summarizes what each type of user can do within
+\projname{} from a functional standpoint, independent of the
+underlying architecture. It separates the actions available to the two
+system roles, Admin and User, covering report management, chatbot
+interaction, forecasting, and account administration.
+
+\projfigure{0.95}{fig-use-case-diagram}{Use case diagram showing the distinct actions available to Admin and User roles, including report management, chatbot interaction, forecasting, and account administration.}{fig:use-case}
+
+% ---------------------------------------------------------------------
+\clearpage
+\subsection{Layout Design}
+\label{sub:layout-design}
+
+The following figures walk through \projname{}'s main screens in the
+order a typical user would encounter them: signing in, viewing the
+dashboard, conversing with the AI chatbot, working with generated
+reports, creating and reviewing forecasts, and, for administrators,
+managing users and account settings. Together they illustrate the
+platform's overall visual language and how each core feature is
+presented to the end user.
+
+\projfigure{0.90}{fig-layout-login}{\protect\projnameplain{}'s login page, showing the email and password authentication form alongside the platform's introductory branding panel.}{fig:layout-login}
+\clearpage
+
+\projfigure{0.90}{fig-layout-dashboard}{\protect\projnameplain{}'s main dashboard, displaying key financial KPIs, sales versus purchases trends, revenue breakdown by transaction type, and profit composition for the selected period.}{fig:layout-dashboard}
+\projfigure{0.90}{fig-layout-chatbot-interface}{\protect\projnameplain{}'s AI chatbot landing view, showing suggested starter questions and the natural-language query input used to begin a conversation.}{fig:layout-chatbot-interface}
+\clearpage
+
+\projfigure{0.90}{fig-layout-chatbot-response}{Example chatbot response showing a natural-language insight, a generated bar chart visualization, and suggested follow-up questions for continued exploration.}{fig:layout-chatbot-response}
+\projfigure{0.90}{fig-layout-all-reports}{Report management page listing all previously generated reports, with an option to create a new customizable report.}{fig:layout-all-reports}
+\clearpage
+
+\projfigure{0.90}{fig-layout-report-page}{Example generated financial report, showing KPI summaries, revenue versus spending trends, payment status, and settlement versus receivables visualizations.}{fig:layout-report-page}
+\projfigure{0.90}{fig-layout-create-forecast}{Forecast creation page shown before any forecast has been generated, prompting the user to initiate a sales or purchase forecast.}{fig:layout-create-forecast}
+\clearpage
+
+\projfigure{0.90}{fig-layout-forecast}{Generated sales forecast, showing predicted values with confidence intervals, model performance metrics, and the key drivers influencing the forecast.}{fig:layout-forecast}
+\projfigure{0.90}{fig-layout-user-management}{Admin-only user management page, listing all system users with their status, creation date, and available account actions.}{fig:layout-user-management}
+\clearpage
+
+\projfigure{0.90}{fig-layout-profile}{User profile page, showing editable personal information and account security settings such as password and recovery email.}{fig:layout-profile}

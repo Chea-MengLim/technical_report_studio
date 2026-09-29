@@ -104,7 +104,6 @@ export function ProjectSidebar({
         {nav(base, <Home size={15} />, "Overview & PDF")}
         {nav(`${base}/cover`, <FileImage size={15} />, "Cover page")}
         {nav(`${base}/team`, <Users size={15} />, "Team members")}
-        {nav(`${base}/references`, <Library size={15} />, "References")}
       </nav>
 
       {GROUPS.map((g) => {
@@ -134,8 +133,18 @@ export function ProjectSidebar({
                 ))}
               </SortableContext>
             </DndContext>
-            {g.kind === "APPENDIX" && (
-              <p className="px-2 pt-1 text-[11px] text-slate-400">References are printed between the chapters and the appendices.</p>
+            {g.kind === "BODY" && (
+              // Printed after the last chapter and before the appendices, like in the PDF.
+              <Link
+                href={`${base}/references`}
+                className={`mt-0.5 flex items-center gap-1.5 rounded py-1.5 pr-1 pl-6 text-sm ${
+                  pathname === `${base}/references` ? "bg-blue-50 font-medium text-blue-800" : "text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                <span className="w-7 shrink-0 text-xs text-slate-400">{hasReferences ? ROMAN[bodyCount] : ""}</span>
+                <span className="truncate">References</span>
+                <Library size={13} className="ml-auto shrink-0 text-slate-400" />
+              </Link>
             )}
           </div>
         );

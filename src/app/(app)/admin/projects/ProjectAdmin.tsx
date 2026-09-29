@@ -30,11 +30,12 @@ export function CreateProjectForm() {
         />
       </div>
       <button className="btn btn-primary" disabled={pending}>
-        Create
+        {pending ? "Creating…" : "Create"}
       </button>
       <p className="hint sm:col-span-3">
-        The project starts with the same sections as SQLyst (Introduction … Appendixes); the team can rename, add,
-        remove and reorder them.
+        The project starts as a copy of the finished SQLyst report: every chapter, figure, table and reference, in
+        table-of-contents order. The team replaces the text and images with their own; the project name in the text
+        updates by itself. Team members, cover logo and tagline start empty.
       </p>
       {error && <p className="text-sm text-red-700 sm:col-span-3">{error}</p>}
     </form>

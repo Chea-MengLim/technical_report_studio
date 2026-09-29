@@ -1,0 +1,73 @@
+% =====================================================================
+%  sections/07_evaluation.tex  --  VII. EVALUATION
+% =====================================================================
+\section{EVALUATION}
+\label{sec:evaluation}
+
+
+
+% ---------------------------------------------------------------------
+\subsection{Experimental Setup}
+\label{sub:experimental-setup}
+
+This section specifies the concrete model, runtime, and hosting configuration
+used to develop and evaluate \projname{}.
+
+\begin{itemize}
+  \item \textbf{Language Model:} The natural-language-to-SQL engine
+      runs on \href{https://huggingface.co/Snowflake/Arctic-Text2SQL-R1-7B}{Snowflake/Arctic-Text2SQL-R1-7B},
+      a 7B-parameter model fine-tuned specifically for text-to-SQL
+      generation. The model is served locally using vLLM, a
+      high-throughput inference engine, rather than accessed through a
+      third-party API. Inference was configured with a temperature of
+      \texttt{0.2} and a maximum output length of \texttt{2048} tokens, to
+      favor deterministic, syntactically precise SQL generation.
+  \item \textbf{Python Environment:} The backend and AI pipeline run on
+      Python 3.11, with dependency management and virtual environment
+      handling via Poetry.
+  \item \textbf{Hosting:} The system is deployed on a remote Ubuntu server
+      equipped with a GPU, self-managed and accessed like a local
+      machine rather than through a managed cloud AI service, allowing
+      the LLM to run entirely within our own infrastructure.
+\end{itemize}
+
+% ---------------------------------------------------------------------
+\subsection{Project Strength}
+\label{sub:project-strength}
+
+Our team developed \projname{} with a focus on usability, performance,
+and intelligent automation. Its key strengths include:
+
+\begin{itemize}
+  \item \textbf{AI Chat Functionality:} Provides real-time chat
+        functionality to enable users to ask questions using natural
+        language to gain insights. This allows non-technical business users
+        to retrieve complex database records instantly without learning SQL.
+  \item \textbf{Data Privacy and Security:} Ensures that all financial
+        data is kept internal and protected from unauthorized access. This
+        guarantees that sensitive corporate financial metrics remain secure
+        and fully compliant with strict data protection standards.
+  \item \textbf{Forecasting Capability:} Provides accurate and
+        confidence metric predictions of future financial trends to
+        support planning and decision-making. This empowers managers to proactively
+        plan operational budgets and allocate resources based on data-driven projections.
+  \item \textbf{Customizable Report Generation:} Allows users to quickly
+        create and customize reports, delivering clear insights for
+        analysis and decision-making, even without technical skills. This drastically
+        reduces manual reporting overhead and accelerates recurring executive reviews.
+\end{itemize}
+
+% ---------------------------------------------------------------------
+\subsection{Project Weakness}
+\label{sub:project-weakness}
+
+Despite its advantages, \projname{} still has some limitations:
+
+\begin{itemize}
+  \item \textbf{Handling Complex Queries:} May struggle with generating
+        accurate results for highly complex or ambiguous natural
+        language queries. Multi-nested subqueries or vague business terms can cause the Text-to-SQL engine to produce incorrect SQL joins or misinterpret user intent.
+  \item \textbf{Limited Query Scope:} \projname{} only supports
+        questions related to the financial data stored within the
+        system. The system cannot synthesize external market context or answer general domain questions outside the indexed relational database tables.
+\end{itemize}
